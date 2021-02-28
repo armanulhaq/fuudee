@@ -1,0 +1,120 @@
+{% extends "foodie/layout.html" %}
+
+{% block body %}
+{% if user.is_authenticated %}
+
+<div class="food-grid">
+{% for food in all_food %}
+<div class="food-card">
+  <div data-bs-toggle="modal" data-bs-target="#modal-{{ food.id }}">
+    <div class="food-image-container">
+      <img class="card-img-top food-image" src="{{ food.image }}" alt="{{ food.name }}">
+    </div>
+    <div class="card-body">
+      <h5 class="card-title"> <strong>{{ food.name }}</strong></h5>
+      <p class="card-text">{{ food.description }}</p>
+    </div>
+  </div>
+  <div class="buy-now-price-container">
+    <button type="button" class="add-to-cart-button btn btn-danger">
+    <div class="cart-animation-container {% if food.count %}slide-right-animation{% else %}slide-left-animation{% endif %}">
+      <div class="inc-dec-container">
+        <div class="remove-from-cart" data-id={{food.id}}>-</div>
+        <div class="add-to-cart-counter">{{ food.count }}</div>
+        <div class="add-to-cart" data-id={{food.id}}>+</div>
+      </div>
+        <div class="add-to-cart" data-id={{food.id}}>Add to cart</div>
+      </div>
+    </button>
+    <strong>₹ {{ food.price }}</strong>
+  </div>
+</div>
+
+<div class="modal fade" id="modal-{{ food.id }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">{{ food.name }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        {{ food.description }}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endfor %}
+</div>
+
+{% else %}
+<strong id="no-account-error">
+    <div>You need to <a href="{% url 'login' %}"> login</a> / <a href="{% url 'register' %}"> register </a>to view Foodie.</div>
+</strong>
+{% endif %}
+
+<script>
+  function findParent(currentNode, classToFind) {
+    if (currentNode.querySelector('.' + classToFind)) {
+      return null
+    }
+    if (currentNode.classList.contains(classToFind)) {
+      return currentNode;
+    }
+    return findParent(currentNode.parentElement, classToFind);
+  }
+
+  function handleClick(event) {
+    const parent = findParent(event.target, 'add-to-cart-button');
+
+    if (!parent) {
+      return
+    }
+
+    const counter = parseInt(parent.querySelector('.add-to-cart-counter').innerText)
+
+    if (event.target.classList.contains('remove-from-cart')) {
+      if (counter === 1) {
+        parent.querySelector('.cart-animation-container').classList.remove('slide-right-animation');
+        parent.querySelector('.cart-animation-container').classList.add('slide-left-animation');
+        return;
+      }
+      parent.querySelector('.add-to-cart-counter').innerText= counter - 1
+    } else if (event.target.classList.contains('add-to-cart')) {
+      parent.querySelector('.add-to-cart-counter').innerText= counter + 1
+      parent.querySelector('.cart-animation-container').classList.remove('slide-left-animation');
+      parent.querySelector('.cart-animation-container').classList.add('slide-right-animation');
+    }
+  }
+
+document.addEventListener('click', handleClick);
+
+function onAddtoCart(event) {
+  if (event.target.classList.contains('add-to-cart')) {
+    fetch(`/addtocart/${event.target.dataset.id}`)
+    .then(bin => bin.json())
+    .then((data) => {
+      event.target.parentElement.querySelector('.add-to-cart-counter').innerText= data.cart_count_add
+    })
+  }
+}
+
+document.addEventListener('click', onAddtoCart);
+
+function removeFromCart(event) {
+    if (event.target.classList.contains('remove-from-cart')) {
+      fetch(`/removefromcart/${event.target.dataset.id}`)
+      .then(bin => bin.json())
+      .then((data) => {
+        event.target.parentElement.querySelector('.add-to-cart-counter').innerText= data.cart_count_remove
+      })
+    }
+  }
+
+document.addEventListener('click', removeFromCart);
+</script>
+
+{% endblock %}
