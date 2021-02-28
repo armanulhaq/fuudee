@@ -11,6 +11,8 @@ from .models import Cart, User, Food
 
 
 def index(request):
+    if not request.user.id:
+        return HttpResponseRedirect(reverse("login"))
     all_food = Food.objects.all()
     for food in all_food:
         cart = Cart.objects.filter(user=request.user.id, food=food.id)
