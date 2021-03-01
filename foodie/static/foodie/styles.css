@@ -3,7 +3,8 @@
 }
 
 .body {
-    padding: 40px 80px
+    padding: 40px 80px;
+    margin-top: 60px;
 }
 #foodie-logo {
     height: 40px;
